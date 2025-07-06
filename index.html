@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>3×3 滑动拼图（含步数统计）</title>
+  <style>
+    body { 
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      justify-content: center; 
+      height: 100vh; 
+      margin: 0; 
+      background: #222; 
+      color: #fff;
+      font-family: sans-serif;
+    }
+    #counter {
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+    #puzzle { 
+      position: relative; 
+      width: 600px; 
+      height: 600px; 
+      border: 4px solid #fff; 
+    }
+    .tile {
+      position: absolute;
+      width: 200px; height: 200px;
+      box-sizing: border-box;
+      border: 2px solid #222;
+      background-image: url('puzzle.jpg');
+      background-size: 600px 600px;
+      cursor: pointer;
+      transition: top .2s, left .2s;
+    }
+    .empty { 
+      background: #222; 
+      cursor: default; 
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 步数显示 -->
+  <div id="counter">步数：0</div>
+
+  <!-- 拼图容器 -->
+  <div id="puzzle"></div>
+
+  <script>
+    const ROWS = 3, COLS = 3;
+    const TILE_W = 200, TILE_H = 200;
+    // 0–7 是图块索引，8 表示空白
+    let board = [...Array(8).keys(), 8];
+    let steps = 0;  // 步数计数器
+
+    // 随机但可解的洗牌
+    function shuffle() {
+      for (let i = 0; i < 1000; i++) {
+        const bi = board.indexOf(8);
+        const r = Math.floor(bi / COLS), c = bi % COLS;
+        const moves = [];
+        [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc]) => {
+          const nr = r+dr, nc = c+dc;
+          if (0<=nr && nr<ROWS && 0<=nc && nc<COLS) moves.push(nr*COLS + nc);
+        });
+        const si = moves[Math.floor(Math.random()*moves.length)];
+        [board[bi], board[si]] = [board[si], board[bi]];
+      }
+    }
+
+    // 渲染拼图和步数
+    function render() {
+      // 更新步数显示
+      document.getElementById('counter').textContent = `步数：${steps}`;
+
+      const container = document.getElementById('puzzle');
+      container.innerHTML = '';
+      board.forEach((val, idx) => {
+        const tile = document.createElement('div');
+        tile.className = 'tile' + (val === 8 ? ' empty' : '');
+        const r = Math.floor(idx / COLS), c = idx % COLS;
+        tile.style.top = (r * TILE_H) + 'px';
+        tile.style.left = (c * TILE_W) + 'px';
+
+        if (val !== 8) {
+          const vr = Math.floor(val / COLS), vc = val % COLS;
+          tile.style.backgroundPosition = `-${vc*TILE_W}px -${vr*TILE_H}px`;
+          tile.addEventListener('click', () => tryMove(idx));
+        }
+        container.appendChild(tile);
+      });
+    }
+
+    // 点击尝试移动
+    function tryMove(idx) {
+      const bi = board.indexOf(8);
+      const r = Math.floor(bi / COLS), c = bi % COLS;
+      const tr = Math.floor(idx / COLS), tc = idx % COLS;
+      const dr = Math.abs(r - tr), dc = Math.abs(c - tc);
+      if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+        // 合法相邻，交换并计步
+        [board[bi], board[idx]] = [board[idx], board[bi]];
+        steps++;
+        render();
+      }
+    }
+
+    // 初始化
+    shuffle();
+    render();
+  </script>
+</body>
+</html>
